@@ -23,17 +23,33 @@ Edit `.env` and set all required values. Pay special attention to:
 
 ### 2. Generate required secrets
 
-These must be generated before the first start:
+These must be generated before the first start. All commands require only `openssl`, available on any Linux system:
 
 ```bash
-# Application encryption key
-docker compose run --rm app php artisan key:generate --show
-# Copy the output to APP_KEY in .env
+# Application encryption key — copy output to APP_KEY
+echo "base64:$(openssl rand -base64 32)"
 
-# OAuth2 server keys (outputs both keys)
-docker compose run --rm app php artisan passport:keys --show
-# Copy the outputs to PASSPORT_PRIVATE_KEY and PASSPORT_PUBLIC_KEY in .env
+# OAuth2 keypair — copy each file's output to PASSPORT_PRIVATE_KEY / PASSPORT_PUBLIC_KEY
+openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:4096 -out passport_private.pem 2>/dev/null
+openssl rsa -in passport_private.pem -pubout -out passport_public.pem 2>/dev/null
+cat passport_private.pem
+cat passport_public.pem
+rm passport_private.pem passport_public.pem
 ```
+
+**In `.env`**, PEM values must be wrapped in double quotes:
+
+```dotenv
+PASSPORT_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----
+MIIEvQ...
+-----END PRIVATE KEY-----"
+
+PASSPORT_PUBLIC_KEY="-----BEGIN PUBLIC KEY-----
+MIIBIj...
+-----END PUBLIC KEY-----"
+```
+
+**In Komodo** (or any env var UI), paste the raw PEM output directly — no quoting needed.
 
 ### 3. Prepare data directories (Linux only)
 
