@@ -29,27 +29,15 @@ These must be generated before the first start. All commands require only `opens
 # Application encryption key — copy output to APP_KEY
 echo "base64:$(openssl rand -base64 32)"
 
-# OAuth2 keypair — copy each file's output to PASSPORT_PRIVATE_KEY / PASSPORT_PUBLIC_KEY
-openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:4096 -out passport_private.pem 2>/dev/null
-openssl rsa -in passport_private.pem -pubout -out passport_public.pem 2>/dev/null
-cat passport_private.pem
-cat passport_public.pem
-rm passport_private.pem passport_public.pem
+# OAuth2 keypair — outputs single-line values safe for .env files and any env UI
+openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:4096 -out /tmp/passport_private.pem 2>/dev/null
+openssl rsa -in /tmp/passport_private.pem -pubout -out /tmp/passport_public.pem 2>/dev/null
+echo "PASSPORT_PRIVATE_KEY:"; awk '{printf "%s\\n", $0}' /tmp/passport_private.pem; echo ""
+echo "PASSPORT_PUBLIC_KEY:";  awk '{printf "%s\\n", $0}' /tmp/passport_public.pem;  echo ""
+rm /tmp/passport_private.pem /tmp/passport_public.pem
 ```
 
-**In `.env`**, PEM values must be wrapped in double quotes:
-
-```dotenv
-PASSPORT_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----
-MIIEvQ...
------END PRIVATE KEY-----"
-
-PASSPORT_PUBLIC_KEY="-----BEGIN PUBLIC KEY-----
-MIIBIj...
------END PUBLIC KEY-----"
-```
-
-**In Komodo** (or any env var UI), paste the raw PEM output directly — no quoting needed.
+The `awk` command collapses the PEM key into a single line with literal `\n` escape sequences. Paste each output value directly into your `.env` file or env var UI — no quoting or reformatting needed.
 
 ### 3. Prepare data directories (Linux only)
 
