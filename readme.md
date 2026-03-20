@@ -57,6 +57,16 @@ docker compose up -d
 
 Solidtime will be available on the port defined by `PORT` in your `.env` (default: `8000`).
 
+### 5. Run database migrations (first run only)
+
+The app does not run migrations automatically. After the containers are healthy, initialize the database schema:
+
+```bash
+docker exec solidtime-app php artisan migrate --force
+```
+
+In Komodo, use the **Exec** terminal on the `solidtime-app` container and run the same command.
+
 ## Upgrading
 
 ```bash
