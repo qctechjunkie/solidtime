@@ -1,16 +1,16 @@
-# =============================================================================
+# ==============================================================================
 # Solidtime Docker Compose - Production
-# =============================================================================
+# ==============================================================================
 # Before starting, copy .env.example to .env and fill in your values:
 #
 #   cp .env.example .env
 #
 # Generate required secrets before first start:
-#   APP_KEY:             docker compose run --rm app php artisan key:generate --show
-#   PASSPORT keys:       docker compose run --rm app php artisan passport:keys --show
+#   APP_KEY:          docker compose run --rm app php artisan key:generate --show
+#   PASSPORT keys:    docker compose run --rm app php artisan passport:keys --show
 #
 # Create and set permissions for data directories (Linux only):
-#   mkdir -p ${DOCKER_DATA_PATH}/{postgres,logs,app-storage}
+#   mkdir -p ${DOCKER_DATA_PATH}/{logs,app-storage}
 #   chown -R 1000:1000 ${DOCKER_DATA_PATH}/{logs,app-storage}
 #
 # Then start Solidtime:
@@ -19,7 +19,7 @@
 #
 # See the Solidtime documentation for full configuration details:
 #   https://docs.solidtime.io/self-hosting/guides/docker
-# =============================================================================
+# ==============================================================================
 
 name: solidtime
 
@@ -39,9 +39,7 @@ services:
       - ${DOCKER_DATA_PATH}/app-storage:/var/www/html/storage/app
     networks:
       - solidtime-internal
-    depends_on:
-      database:
-        condition: service_healthy
+      - pi2-postgres-network
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:8000/health-check/up"]
       interval: 30s
@@ -67,9 +65,7 @@ services:
       - ${DOCKER_DATA_PATH}/app-storage:/var/www/html/storage/app
     networks:
       - solidtime-internal
-    depends_on:
-      database:
-        condition: service_healthy
+      - pi2-postgres-network
     healthcheck:
       test: ["CMD", "healthcheck"]
       interval: 30s
@@ -96,43 +92,13 @@ services:
       - ${DOCKER_DATA_PATH}/app-storage:/var/www/html/storage/app
     networks:
       - solidtime-internal
-    depends_on:
-      database:
-        condition: service_healthy
+      - pi2-postgres-network
     healthcheck:
       test: ["CMD", "healthcheck"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 30s
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-
-  database:
-    image: postgres:17-alpine
-    container_name: solidtime-database
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: ${DB_DATABASE}
-      POSTGRES_USER: ${DB_USERNAME}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-    volumes:
-      - ${DOCKER_DATA_PATH}/postgres:/var/lib/postgresql/data
-    networks:
-      - solidtime-internal
-    # Uncomment to expose PostgreSQL on the host (local DB tools only).
-    # WARNING: Never expose this port to the internet.
-    # ports:
-    #   - "${FORWARD_DB_PORT:-5432}:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
-      interval: 5s
-      timeout: 5s
-      retries: 7
-      start_period: 10s
     logging:
       driver: "json-file"
       options:
@@ -159,3 +125,6 @@ services:
 networks:
   solidtime-internal:
     driver: bridge
+  pi2-postgres-network:
+    name: ${POSTGRES_NETWORK_NAME:-pi2-postgres-network}
+    external: true
